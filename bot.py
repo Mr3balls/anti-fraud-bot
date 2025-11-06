@@ -177,10 +177,17 @@ async def check_answer(message: types.Message):
     await send_question(message)
 
 @dp.message(Command("web"))
+@dp.message(F.text == "/web")
 async def web_link(message: types.Message):
-    web_url = os.getenv("WEB_URL", "https://example.com")
-    print("WEB command triggered!")  # для проверки в логах
-    await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
+    try:
+        print("✅ /web command triggered")
+        web_url = os.getenv("WEB_URL", "https://example.com")
+        print("WEB_URL =", web_url)
+        await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
+        print("✅ Message sent")
+    except Exception as e:
+        print("❌ Ошибка в /web:", e)
+
 
 # --- Для web.py ---
 def get_dispatcher():
