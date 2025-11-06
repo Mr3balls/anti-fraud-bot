@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, ReplyKeyboardMarkup, KeyboardButton
 load_dotenv()
-print("API_TOKEN from env:", os.getenv("API_TOKEN"))
+
 API_TOKEN = os.getenv("API_TOKEN")
 
 bot = Bot(token=API_TOKEN)
@@ -178,7 +178,8 @@ async def check_answer(message: types.Message):
 
 @dp.message(Command("web"))
 async def web_link(message: types.Message):
-    await message.answer("🌐 Панель статистики: доступна по ссылке на сервере (Railway).")
+    web_url = os.getenv("WEB_URL", "https://example.com")
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
 
 # --- Для web.py ---
 def get_dispatcher():
