@@ -1,11 +1,12 @@
 import json
 import random
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, ReplyKeyboardMarkup, KeyboardButton
 
-API_TOKEN = "8308100428:AAHoex9y8fK8eUqMWHC1KLlJZ81fnLlO0aY"
+API_TOKEN = os.getenv("API_TOKEN")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
