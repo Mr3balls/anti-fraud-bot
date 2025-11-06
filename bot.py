@@ -179,6 +179,7 @@ async def check_answer(message: types.Message):
 @dp.message(Command("web"))
 async def web_link(message: types.Message):
     web_url = os.getenv("WEB_URL", "https://example.com")
+    print("WEB command triggered!")  # для проверки в логах
     await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
 
 # --- Для web.py ---
