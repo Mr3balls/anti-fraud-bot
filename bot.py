@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import json
 import random
 import asyncio
@@ -5,6 +6,7 @@ import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, ReplyKeyboardMarkup, KeyboardButton
+load_dotenv()
 
 API_TOKEN = os.getenv("API_TOKEN")
 
