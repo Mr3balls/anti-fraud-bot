@@ -156,6 +156,9 @@ async def wait_for_answer(message):
 
 @dp.message(F.text)
 async def check_answer(message: types.Message):
+    # Игнорируем команды, чтобы не блокировать /web и другие
+    if message.text.startswith("/"):
+        return
     user_id = message.from_user.username or str(message.from_user.id)
     if user_id not in user_state:
         return
@@ -181,8 +184,7 @@ async def check_answer(message: types.Message):
 # --- /web команда ---
 @dp.message(Command("web"))
 async def web_link(message: types.Message):
-    web_url = os.getenv("WEB_URL", "https://example.com")
-    await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
 
 print("✅ Все хэндлеры зарегистрированы. Bot module loaded.")
 
