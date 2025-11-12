@@ -100,13 +100,14 @@ async def start(message: types.Message):
     user_id = message.from_user.username or str(message.from_user.id)
     kb = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton("🇷🇺 Русский")],
-            [KeyboardButton("🇺🇸 English")],
-            [KeyboardButton("🇰🇿 Қазақша")]
+            [KeyboardButton(text="🇷🇺 Русский")],
+            [KeyboardButton(text="🇺🇸 English")],
+            [KeyboardButton(text="🇰🇿 Қазақша")]
         ],
         resize_keyboard=True
     )
     await message.answer(TEXTS["start"]["ru"], reply_markup=kb)
+
 
 @dp.message(F.text.in_({"🇷🇺 Русский", "🇺🇸 English", "🇰🇿 Қазақша"}))
 async def set_language(message: types.Message):
