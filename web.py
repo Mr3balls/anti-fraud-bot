@@ -17,6 +17,7 @@ async def web_handler(request):
     html = html.replace("{{rows}}", rows)
     return web.Response(text=html, content_type="text/html")
 
+
 async def run_web():
     app = web.Application()
     app.router.add_get("/", web_handler)
@@ -27,12 +28,14 @@ async def run_web():
     await site.start()
     print(f"🌐 Веб-панель доступна на порту {port}")
 
-async def main():
-    print("🚀 Бот и веб-сервер запущены!")
-    await asyncio.gather(
-        dp.start_polling(bot),
-        run_web()
-    )
+    # Запускаем бота в фоне
+    asyncio.create_task(dp.start_polling(bot))
+    print("🤖 Бот запущен как фоновая задача")
+
+    # Чтобы процесс Railway не завершался
+    while True:
+        await asyncio.sleep(3600)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run_web())
