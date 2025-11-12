@@ -12,7 +12,7 @@ load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-WEB_URL = os.getenv("WEB_URL")
+WEB_URL = "https://web-production-695f2.up.railway.app"
 if not WEB_URL:
     raise RuntimeError("❌ WEB_URL не задана!")
 
