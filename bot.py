@@ -101,26 +101,31 @@ async def leaderboard(message: types.Message):
     top = sorted(SCORES.items(), key=lambda x: x[1], reverse=True)[:5]
     text = "🏆 Топ игроков:\n\n"
     for i, (uid, score) in enumerate(top, 1):
-        text += f"{i}. ID {uid[-5:]} — {score} очков ({get_level(score)})\n"
+        # 🔹 ИЗМЕНЕНО — показываем username, если не число
+        name = f"@{uid}" if not uid.isdigit() else f"ID {uid[-5:]}"
+        text += f"{i}. {name} — {score} очков ({get_level(score)})\n"
     await message.answer(text)
 
 @dp.message(Command("stats"))
 @dp.message(F.text == "📈 Моя статистика")
 async def stats(message: types.Message):
-    user_id = str(message.from_user.id)
+    # 🔹 ИЗМЕНЕНО — сохраняем по username, если есть
+    user_id = message.from_user.username or str(message.from_user.id)
     points = SCORES.get(user_id, 0)
     await message.answer(f"📊 Очков: {points}\nУровень: {get_level(points)}")
 
 @dp.message(Command("quiz"))
 @dp.message(F.text == "🎯 Начать викторину")
 async def quiz(message: types.Message):
-    user_id = str(message.from_user.id)
+    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
+    user_id = message.from_user.username or str(message.from_user.id)
     user_state[user_id] = {"score": 0, "current": 0}
     await message.answer("🧠 Викторина начинается! 5 вопросов, по 30 сек. 🚀")
     await send_question(message)
 
 async def send_question(message: types.Message):
-    user_id = str(message.from_user.id)
+    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
+    user_id = message.from_user.username or str(message.from_user.id)
     state = user_state[user_id]
     current_q = state["current"]
 
@@ -154,7 +159,8 @@ async def wait_for_answer(message):
 
 @dp.message(F.text)
 async def check_answer(message: types.Message):
-    user_id = str(message.from_user.id)
+    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
+    user_id = message.from_user.username or str(message.from_user.id)
     if user_id not in user_state:
         return
     state = user_state[user_id]
