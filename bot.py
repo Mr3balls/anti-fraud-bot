@@ -114,6 +114,17 @@ async def stats(message: types.Message):
     points = SCORES.get(user_id, 0)
     await message.answer(f"📊 Очков: {points}\nУровень: {get_level(points)}")
 
+# Команда /web
+@dp.message(Command("web"))
+async def web_command(message: types.Message):
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
+
+# Кнопка "Сайт со статистикой"
+@dp.message(F.text == "Сайт со статистикой")
+async def web_button(message: types.Message):
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
+
+
 @dp.message(Command("quiz"))
 @dp.message(F.text == "🎯 Начать викторину")
 async def quiz(message: types.Message):
@@ -185,15 +196,6 @@ async def check_answer(message: types.Message):
     state["current"] += 1
     await asyncio.sleep(1)
     await send_question(message)
-
-
-# --- /web команда ---
-@dp.message(Command("web"))
-@dp.message(F.text == "Сайт со статистикой")
-async def web_link(message: types.Message):
-    await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
-
-print("✅ Все хэндлеры зарегистрированы. Bot module loaded.")
 
 # --- Для web.py ---
 def get_dispatcher():
