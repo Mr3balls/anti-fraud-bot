@@ -12,7 +12,9 @@ load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-WEB_URL = os.getenv("WEB_URL", "https://example.com")
+WEB_URL = os.getenv("WEB_URL")
+if not WEB_URL:
+    raise RuntimeError("❌ WEB_URL не задана!")
 
 # --- Загружаем вопросы ---
 with open("questions.json", "r", encoding="utf-8") as f:
