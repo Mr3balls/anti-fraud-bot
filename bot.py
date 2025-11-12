@@ -27,7 +27,7 @@ try:
 except FileNotFoundError:
     SCORES = {}
 
-user_state = {}
+user_state = {}  # Будет хранить {"score": 0, "current": 0, "lang": "ru"}
 
 # --- Сохранение статистики ---
 def save_scores():
@@ -64,19 +64,9 @@ TEXTS = {
         "kz": ["🎯 Викторина", "📚 Оқу режимі", "📊 Лидерлер тізімі", "📈 Менің статистикам", "Веб-панель"]
     },
     "start": {
-        "ru": "👋 Привет! Я тренажёр «Анти-мошенник».\nВыбери действие или введи команду /help.",
-        "en": "👋 Hello! I'm Anti-Fraud Trainer.\nChoose an action or type /help.",
-        "kz": "👋 Сәлем! Мен «Анти-мошенник» тренажері.\nӘрекетті таңдаңыз немесе /help енгізіңіз."
-    },
-    "help": {
-        "ru": "📜 Доступные команды:\n/start — начать\n/quiz — викторина\n/learn — обучение\n/leaderboard — лидеры\n/stats — статистика\n/web — веб-панель",
-        "en": "📜 Commands:\n/start — start\n/quiz — quiz\n/learn — learn\n/leaderboard — leaderboard\n/stats — stats\n/web — web panel",
-        "kz": "📜 Қол жетімді командалар:\n/start — бастау\n/quiz — викторина\n/learn — оқу\n/leaderboard — лидерлер\n/stats — статистика\n/web — веб-панель"
-    },
-    "choose_lang": {
-        "ru": "Выберите язык:",
-        "en": "Choose language:",
-        "kz": "Тілді таңдаңыз:"
+        "ru": "👋 Привет! Выберите язык:",
+        "en": "👋 Hello! Choose language:",
+        "kz": "👋 Сәлем! Тілді таңдаңыз:"
     },
     "lang_set": {
         "ru": "Язык выбран: Русский",
@@ -95,7 +85,7 @@ TEXTS = {
     }
 }
 
-# --- Главное меню с языком ---
+# --- Главное меню с учетом языка ---
 def main_menu(user_id=None):
     lang = user_state.get(user_id, {}).get("lang", "ru")
     kb = ReplyKeyboardBuilder()
@@ -104,9 +94,10 @@ def main_menu(user_id=None):
     kb.adjust(2)
     return kb.as_markup(resize_keyboard=True)
 
-# --- Команды ---
-@dp.message(Command("lang"))
-async def choose_language(message: types.Message):
+# --- Выбор языка при старте ---
+@dp.message(Command("start"))
+async def start(message: types.Message):
+    user_id = message.from_user.username or str(message.from_user.id)
     kb = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("🇷🇺 Русский")],
@@ -115,86 +106,39 @@ async def choose_language(message: types.Message):
         ],
         resize_keyboard=True
     )
-    await message.answer(
-        f"{TEXTS['choose_lang']['ru']}\n{TEXTS['choose_lang']['en']}\n{TEXTS['choose_lang']['kz']}",
-        reply_markup=kb
-    )
+    await message.answer(TEXTS["start"]["ru"], reply_markup=kb)
 
 @dp.message(F.text.in_({"🇷🇺 Русский", "🇺🇸 English", "🇰🇿 Қазақша"}))
 async def set_language(message: types.Message):
     user_id = message.from_user.username or str(message.from_user.id)
     lang_map = {"🇷🇺 Русский": "ru", "🇺🇸 English": "en", "🇰🇿 Қазақша": "kz"}
-    user_state[user_id] = user_state.get(user_id, {"score": 0, "current": 0})
-    user_state[user_id]["lang"] = lang_map[message.text]
+    user_state[user_id] = {"score": 0, "current": 0, "lang": lang_map[message.text]}
     await message.answer(TEXTS["lang_set"][lang_map[message.text]], reply_markup=main_menu(user_id))
 
-@dp.message(Command("start"))
-async def start(message: types.Message):
+# --- Кнопки меню ---
+@dp.message(F.text.in_(TEXTS["menu"]["ru"] + TEXTS["menu"]["en"] + TEXTS["menu"]["kz"]))
+async def menu_handler(message: types.Message):
     user_id = message.from_user.username or str(message.from_user.id)
     lang = user_state.get(user_id, {}).get("lang", "ru")
-    await message.answer(TEXTS["start"][lang], reply_markup=main_menu(user_id))
+    text = message.text
 
-@dp.message(Command("help"))
-async def help_command(message: types.Message):
-    user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    await message.answer(TEXTS["help"][lang])
+    if text == TEXTS["menu"][lang][0]:  # Викторина
+        await start_quiz(message)
+    elif text == TEXTS["menu"][lang][1]:  # Режим обучения
+        await learn_mode(message)
+    elif text == TEXTS["menu"][lang][2]:  # Таблица лидеров
+        await leaderboard(message)
+    elif text == TEXTS["menu"][lang][3]:  # Моя статистика
+        await stats(message)
+    elif text == TEXTS["menu"][lang][4]:  # Сайт
+        await web_panel(message)
 
-@dp.message(Command("learn"))
-@dp.message(F.text.in_({
-    TEXTS["menu"]["ru"][1], TEXTS["menu"]["en"][1], TEXTS["menu"]["kz"][1]
-}))
-async def learn(message: types.Message):
+# --- Викторина ---
+async def start_quiz(message: types.Message):
     user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    tip = random.choice(QUESTIONS)
-    feedbacks = "\n\n".join([f"💡 {opt['feedback'][lang]}" for opt in tip["options"]])
-    await message.answer(f"📖 {TEXTS['menu'][1][lang]}:\n\n⚠️ {tip['situation'][lang]}\n\n{feedbacks}")
-
-@dp.message(Command("leaderboard"))
-@dp.message(F.text.in_({
-    TEXTS["menu"]["ru"][2], TEXTS["menu"]["en"][2], TEXTS["menu"]["kz"][2]
-}))
-async def leaderboard(message: types.Message):
-    user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    if not SCORES:
-        await message.answer("Пока никто не играл 😅")
-        return
-    top = sorted(SCORES.items(), key=lambda x: x[1], reverse=True)[:5]
-    text = "🏆 Топ игроков:\n\n"
-    for i, (uid, score) in enumerate(top, 1):
-        name = f"@{uid}" if not uid.isdigit() else f"ID {uid[-5:]}"
-        text += f"{i}. {name} — {score} очков ({get_level(score)})\n"
-    await message.answer(text)
-
-@dp.message(Command("stats"))
-@dp.message(F.text.in_({
-    TEXTS["menu"]["ru"][3], TEXTS["menu"]["en"][3], TEXTS["menu"]["kz"][3]
-}))
-async def stats(message: types.Message):
-    user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    points = SCORES.get(user_id, 0)
-    await message.answer(f"📊 Очков: {points}\nУровень: {get_level(points)}")
-
-@dp.message(Command("web"))
-@dp.message(F.text.in_({
-    TEXTS["menu"]["ru"][4], TEXTS["menu"]["en"][4], TEXTS["menu"]["kz"][4]
-}))
-async def web_command(message: types.Message):
-    user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    await message.answer(TEXTS["web_panel"][lang])
-
-@dp.message(Command("quiz"))
-@dp.message(F.text.in_({
-    TEXTS["menu"]["ru"][0], TEXTS["menu"]["en"][0], TEXTS["menu"]["kz"][0]
-}))
-async def quiz(message: types.Message):
-    user_id = message.from_user.username or str(message.from_user.id)
-    lang = user_state.get(user_id, {}).get("lang", "ru")
-    user_state[user_id] = {"score": 0, "current": 0, "lang": lang}
+    lang = user_state[user_id]["lang"]
+    user_state[user_id]["score"] = 0
+    user_state[user_id]["current"] = 0
     await message.answer(TEXTS["quiz_start"][lang])
     await send_question(message)
 
@@ -208,15 +152,7 @@ async def send_question(message: types.Message):
         total_score = state["score"]
         SCORES[user_id] = SCORES.get(user_id, 0) + total_score
         save_scores()
-        achievement = get_achievement(SCORES[user_id])
-        text = (
-            f"🏁 Викторина завершена!\n"
-            f"Очки: {total_score}\n"
-            f"Всего: {SCORES[user_id]}\n"
-            f"Уровень: {get_level(SCORES[user_id])}"
-        )
-        if achievement:
-            text += f"\n\n{achievement}"
+        text = f"🏁 Викторина завершена!\nОчки: {total_score}\nВсего: {SCORES[user_id]}\nУровень: {get_level(SCORES[user_id])}"
         await message.answer(text, reply_markup=main_menu(user_id))
         user_state.pop(user_id, None)
         return
@@ -233,11 +169,9 @@ async def send_question(message: types.Message):
 async def check_answer(message: types.Message):
     if message.text.startswith("/"):
         return
-
     user_id = message.from_user.username or str(message.from_user.id)
     if user_id not in user_state:
         return
-
     state = user_state[user_id]
     lang = state.get("lang", "ru")
     question_id = state.get("question")
@@ -257,6 +191,33 @@ async def check_answer(message: types.Message):
     state["current"] += 1
     await asyncio.sleep(1)
     await send_question(message)
+
+# --- Остальные функции ---
+async def learn_mode(message: types.Message):
+    user_id = message.from_user.username or str(message.from_user.id)
+    lang = user_state[user_id]["lang"]
+    tip = random.choice(QUESTIONS)
+    feedbacks = "\n\n".join([f"💡 {opt['feedback'][lang]}" for opt in tip["options"]])
+    await message.answer(f"📖 Режим обучения:\n\n⚠️ {tip['situation'][lang]}\n\n{feedbacks}")
+
+async def leaderboard(message: types.Message):
+    if not SCORES:
+        await message.answer("Пока никто не играл 😅")
+        return
+    top = sorted(SCORES.items(), key=lambda x: x[1], reverse=True)[:5]
+    text = "🏆 Топ игроков:\n\n"
+    for i, (uid, score) in enumerate(top, 1):
+        name = f"@{uid}" if not uid.isdigit() else f"ID {uid[-5:]}"
+        text += f"{i}. {name} — {score} очков ({get_level(score)})\n"
+    await message.answer(text)
+
+async def stats(message: types.Message):
+    user_id = message.from_user.username or str(message.from_user.id)
+    points = SCORES.get(user_id, 0)
+    await message.answer(f"📊 Очков: {points}\nУровень: {get_level(points)}")
+
+async def web_panel(message: types.Message):
+    await message.answer(TEXTS["web_panel"]["ru"])
 
 # --- Для web.py ---
 def get_dispatcher():
