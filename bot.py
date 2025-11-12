@@ -124,8 +124,7 @@ async def web_command(message: types.Message):
 # Кнопка "Сайт со статистикой"
 @dp.message(F.text == "Сайт со статистикой")
 async def web_button(message: types.Message):
-    await message.answer(f"🌐 Панель статистики доступна
-здесь:\n{WEB_URL}")
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
 
 
 @dp.message(Command("quiz"))
