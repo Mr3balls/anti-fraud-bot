@@ -12,6 +12,7 @@ load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+WEB_URL = os.getenv("WEB_URL", "https://example.com")
 
 # --- Загружаем вопросы ---
 with open("questions.json", "r", encoding="utf-8") as f:
@@ -179,19 +180,12 @@ async def check_answer(message: types.Message):
 
 # --- /web команда ---
 @dp.message(Command("web"))
-@dp.message(F.text == "/web")
 async def web_link(message: types.Message):
-    try:
-        print("✅ /web command triggered")
-        web_url = os.getenv("WEB_URL", "https://example.com")
-        print("WEB_URL =", web_url)
-        await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
-        print("✅ Message sent")
-    except Exception as e:
-        print("❌ Ошибка в /web:", e)
+    web_url = os.getenv("WEB_URL", "https://example.com")
+    await message.answer(f"🌐 Панель статистики доступна здесь:\n{web_url}")
 
 print("✅ Все хэндлеры зарегистрированы. Bot module loaded.")
 
 # --- Для web.py ---
 def get_dispatcher():
-    return dp, bot, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS
+    return dp, bot, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS, WEB_URL

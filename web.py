@@ -4,7 +4,7 @@ from aiohttp import web
 from bot import get_dispatcher
 
 # Получаем функции и данные из бота
-dp, bot, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS = get_dispatcher()
+dp, bot, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS, WEB_URL = get_dispatcher()
 
 async def web_handler(request):
     with open("templates/index.html", "r", encoding="utf-8") as f:
