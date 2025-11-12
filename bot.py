@@ -61,6 +61,7 @@ def main_menu():
     kb.button(text="📚 Режим обучения")
     kb.button(text="📊 Таблица лидеров")
     kb.button(text="📈 Моя статистика")
+    kb.button(text="Сайт со статистикой")
     kb.adjust(2)
     return kb.as_markup(resize_keyboard=True)
 
@@ -156,12 +157,16 @@ async def wait_for_answer(message):
 
 @dp.message(F.text)
 async def check_answer(message: types.Message):
-    # Игнорируем команды, чтобы не блокировать /web и другие
+    # Игнорируем команды
     if message.text.startswith("/"):
         return
+
     user_id = message.from_user.username or str(message.from_user.id)
+    
+    # Проверяем, что пользователь в состоянии викторины
     if user_id not in user_state:
-        return
+        return  # Если пользователь не в викторине, ничего не делаем
+
     state = user_state[user_id]
     question_id = state.get("question")
     question = next((q for q in QUESTIONS if q["id"] == question_id), None)
@@ -181,8 +186,10 @@ async def check_answer(message: types.Message):
     await asyncio.sleep(1)
     await send_question(message)
 
+
 # --- /web команда ---
 @dp.message(Command("web"))
+@dp.message(F.text == "Сайт со статистикой")
 async def web_link(message: types.Message):
     await message.answer(f"🌐 Панель статистики доступна здесь:\n{WEB_URL}")
 
