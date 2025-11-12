@@ -6,10 +6,10 @@ import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, ReplyKeyboardMarkup, KeyboardButton
+
 load_dotenv()
 
 API_TOKEN = os.getenv("API_TOKEN")
-
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
@@ -101,7 +101,6 @@ async def leaderboard(message: types.Message):
     top = sorted(SCORES.items(), key=lambda x: x[1], reverse=True)[:5]
     text = "🏆 Топ игроков:\n\n"
     for i, (uid, score) in enumerate(top, 1):
-        # 🔹 ИЗМЕНЕНО — показываем username, если не число
         name = f"@{uid}" if not uid.isdigit() else f"ID {uid[-5:]}"
         text += f"{i}. {name} — {score} очков ({get_level(score)})\n"
     await message.answer(text)
@@ -109,7 +108,6 @@ async def leaderboard(message: types.Message):
 @dp.message(Command("stats"))
 @dp.message(F.text == "📈 Моя статистика")
 async def stats(message: types.Message):
-    # 🔹 ИЗМЕНЕНО — сохраняем по username, если есть
     user_id = message.from_user.username or str(message.from_user.id)
     points = SCORES.get(user_id, 0)
     await message.answer(f"📊 Очков: {points}\nУровень: {get_level(points)}")
@@ -117,14 +115,12 @@ async def stats(message: types.Message):
 @dp.message(Command("quiz"))
 @dp.message(F.text == "🎯 Начать викторину")
 async def quiz(message: types.Message):
-    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
     user_id = message.from_user.username or str(message.from_user.id)
     user_state[user_id] = {"score": 0, "current": 0}
     await message.answer("🧠 Викторина начинается! 5 вопросов, по 30 сек. 🚀")
     await send_question(message)
 
 async def send_question(message: types.Message):
-    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
     user_id = message.from_user.username or str(message.from_user.id)
     state = user_state[user_id]
     current_q = state["current"]
@@ -159,7 +155,6 @@ async def wait_for_answer(message):
 
 @dp.message(F.text)
 async def check_answer(message: types.Message):
-    # 🔹 ИЗМЕНЕНО — идентификатор игрока = username или ID
     user_id = message.from_user.username or str(message.from_user.id)
     if user_id not in user_state:
         return
@@ -182,6 +177,7 @@ async def check_answer(message: types.Message):
     await asyncio.sleep(1)
     await send_question(message)
 
+# --- /web команда ---
 @dp.message(Command("web"))
 @dp.message(F.text == "/web")
 async def web_link(message: types.Message):
@@ -194,6 +190,7 @@ async def web_link(message: types.Message):
     except Exception as e:
         print("❌ Ошибка в /web:", e)
 
+print("✅ Все хэндлеры зарегистрированы. Bot module loaded.")
 
 # --- Для web.py ---
 def get_dispatcher():

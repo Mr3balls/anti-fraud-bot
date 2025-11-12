@@ -1,10 +1,12 @@
 import os
 import asyncio
 from aiohttp import web
-from bot import get_dispatcher
 
-# Получаем функции и данные из бота
-dp, bot, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS = get_dispatcher()
+# --- Импортируем бот и все функции ---
+from bot import get_dispatcher
+import bot  # гарантирует регистрацию всех хэндлеров
+
+dp, bot_instance, SCORES, save_scores, get_level, get_achievement, user_state, QUESTIONS = get_dispatcher()
 
 async def web_handler(request):
     with open("templates/index.html", "r", encoding="utf-8") as f:
@@ -17,7 +19,6 @@ async def web_handler(request):
     html = html.replace("{{rows}}", rows)
     return web.Response(text=html, content_type="text/html")
 
-
 async def run_web():
     app = web.Application()
     app.router.add_get("/", web_handler)
@@ -28,14 +29,11 @@ async def run_web():
     await site.start()
     print(f"🌐 Веб-панель доступна на порту {port}")
 
-    # Запускаем бота в фоне
-    asyncio.create_task(dp.start_polling(bot))
-    print("🤖 Бот запущен как фоновая задача")
-
-    # Чтобы процесс Railway не завершался
-    while True:
-        await asyncio.sleep(3600)
-
+async def main():
+    print("🚀 Бот и веб-сервер запущены!")
+    # запускаем веб-сервер как основной процесс, а бота — как фоновую задачу
+    asyncio.create_task(dp.start_polling(bot_instance))
+    await run_web()
 
 if __name__ == "__main__":
-    asyncio.run(run_web())
+    asyncio.run(main())
