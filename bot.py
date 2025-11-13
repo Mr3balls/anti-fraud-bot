@@ -67,11 +67,26 @@ def save_languages():
 # --- Получение перевода ---
 def get_text(user_id, key, **kwargs):
     lang = USER_LANGUAGES.get(str(user_id), 'ru')
-    text = LOCALES[lang].get(key, LOCALES['ru'].get(key, key))
+    
+    # Обрабатываем вложенные ключи (например, "levels.5")
+    keys = key.split('.')
+    value = LOCALES[lang]
+    
+    try:
+        for k in keys:
+            value = value[k]
+        text = value
+    except (KeyError, TypeError):
+        # Если ключ не найден, используем русский как запасной вариант
+        value = LOCALES['ru']
+        for k in keys:
+            value = value.get(k, key)  # Если ключа нет, возвращаем исходный ключ
+        text = value
     
     # Заменяем переменные в тексте
-    for k, v in kwargs.items():
-        text = text.replace(f"{{{k}}}", str(v))
+    if isinstance(text, str):
+        for k, v in kwargs.items():
+            text = text.replace(f"{{{k}}}", str(v))
     
     return text
 
