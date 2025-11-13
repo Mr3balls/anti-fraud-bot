@@ -12,6 +12,7 @@
     "quiz_question": "❓ Question {current}/5:\n\n⚠️ {situation}",
     "quiz_correct": "✅ Correct!\n💡 {feedback}",
     "quiz_incorrect": "❌ Incorrect.\n💡 {feedback}",
+    "quiz_timeout": "⏰ Time's up! Quiz completed automatically.",
     "quiz_complete": "🏁 Quiz completed!\nPoints: {score}\nTotal: {total}\nLevel: {level}",
     "learn_example": "📖 Learning example:",
     "leaderboard_empty": "No one has played yet 😅",

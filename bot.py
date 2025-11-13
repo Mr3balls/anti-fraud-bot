@@ -98,11 +98,11 @@ def get_level(points: int, user_id):
         return get_text(user_id, "levels.30")
 
 def get_achievement(points: int, user_id):
-    if points == 5:
+    if points >= 5 and points < 15:
         return get_text(user_id, "achievements.5")
-    elif points == 15:
+    elif points >= 15 and points < 30:
         return get_text(user_id, "achievements.15")
-    elif points == 30:
+    elif points >= 30:
         return get_text(user_id, "achievements.30")
     return None
 
@@ -125,6 +125,30 @@ def language_menu():
     kb.button(text="🇺🇸 English")
     kb.adjust(3)
     return kb.as_markup(resize_keyboard=True)
+
+# --- Таймер викторины ---
+async def quiz_timer(user_key, message):
+    await asyncio.sleep(30)  # 30 секунд таймер
+    
+    # Проверяем, что пользователь все еще в викторине
+    if user_key in user_state:
+        user_id = str(message.from_user.id)
+        state = user_state[user_key]
+        
+        # Завершаем викторину досрочно
+        total_score = state["score"]
+        SCORES[user_key] = SCORES.get(user_key, 0) + total_score
+        save_scores()
+        
+        text = get_text(user_id, "quiz_timeout")
+        text += f"\n\n{get_text(user_id, 'quiz_complete', score=total_score, total=SCORES[user_key], level=get_level(SCORES[user_key], user_id))}"
+        
+        achievement = get_achievement(SCORES[user_key], user_id)
+        if achievement:
+            text += f"\n\n{achievement}"
+            
+        await message.answer(text, reply_markup=main_menu(user_id))
+        user_state.pop(user_key, None)
 
 # --- Команды ---
 @dp.message(Command("start"))
@@ -274,7 +298,12 @@ async def handle_text(message: types.Message):
 async def start_quiz(message: types.Message):
     user_id = str(message.from_user.id)
     user_key = message.from_user.username or str(message.from_user.id)
-    user_state[user_key] = {"score": 0, "current": 0}
+    user_state[user_key] = {"score": 0, "current": 0, "timer_task": None}
+    
+    # Запускаем таймер
+    timer_task = asyncio.create_task(quiz_timer(user_key, message))
+    user_state[user_key]["timer_task"] = timer_task
+    
     await message.answer(get_text(user_id, "quiz_start"))
     await send_question(message)
 
@@ -285,6 +314,10 @@ async def send_question(message: types.Message):
     current_q = state["current"]
 
     if current_q >= 5:
+        # Отменяем таймер, если викторина завершена
+        if state.get("timer_task"):
+            state["timer_task"].cancel()
+        
         total_score = state["score"]
         SCORES[user_key] = SCORES.get(user_key, 0) + total_score
         save_scores()
