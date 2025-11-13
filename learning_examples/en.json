@@ -1,0 +1,49 @@
+{
+    "examples": [
+        {
+            "situation": "You received an SMS: «Your card has been blocked. To unblock, follow the link: bank-security.com»",
+            "explanation": "⚠️ This is phishing! Banks never send links to unblock cards. Real notifications only contain the bank's phone number.",
+            "tips": [
+                "Don't click links from SMS",
+                "Call the bank only at the official number",
+                "Check the message sender"
+            ]
+        },
+        {
+            "situation": "A stranger on social media offers a high-yield investment project with guaranteed 200% monthly returns",
+            "explanation": "💸 This is a financial pyramid! Real profits of this size don't exist. They want to deceive you and take your money.",
+            "tips": [
+                "Remember: high return = high risk",
+                "Check financial companies' licenses",
+                "Don't believe guarantees of quick profits"
+            ]
+        },
+        {
+            "situation": "Someone calls you pretending to be a bank employee: «Suspicious transaction detected. Tell me the code from SMS to cancel»",
+            "explanation": "📞 This is fraud! Never share codes from SMS - these are transaction confirmation codes. Scammers can steal your money.",
+            "tips": [
+                "Never tell anyone codes from SMS",
+                "Call the bank back yourself",
+                "Verify the caller's number"
+            ]
+        },
+        {
+            "situation": "On a classifieds website, they sell a new iPhone for half price with prepayment",
+            "explanation": "🛍️ This is a scam! Scammers create attractive offers to get prepayment and disappear. You won't receive the product.",
+            "tips": [
+                "Buy only with buyer protection",
+                "Meet in person for purchases",
+                "Don't transfer prepayment to strangers"
+            ]
+        },
+        {
+            "situation": "You receive an email from «support service» asking to update card details due to «system hacking»",
+            "explanation": "📧 This is phishing! Real support services never request card details via email. The link leads to a fake website.",
+            "tips": [
+                "Don't enter card details on suspicious sites",
+                "Check the email sender's address",
+                "Update details only through the official app"
+            ]
+        }
+    ]
+}

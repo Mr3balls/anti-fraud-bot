@@ -29,6 +29,16 @@ for lang in ['ru', 'kz', 'en']:
     except FileNotFoundError:
         print(f"⚠️ Файл перевода {lang}.json не найден")
 
+# --- Загружаем обучающие примеры ---
+LEARNING_EXAMPLES = {}
+for lang in ['ru', 'kz', 'en']:
+    try:
+        with open(f"learning_examples/{lang}.json", "r", encoding="utf-8") as f:
+            LEARNING_EXAMPLES[lang] = json.load(f)
+    except FileNotFoundError:
+        print(f"⚠️ Файл обучающих примеров {lang}.json не найден")
+        LEARNING_EXAMPLES[lang] = {"examples": []}
+
 # --- Загружаем статистику и настройки языка ---
 try:
     with open("scores.json", "r", encoding="utf-8") as f:
@@ -64,6 +74,15 @@ def get_text(user_id, key, **kwargs):
         text = text.replace(f"{{{k}}}", str(v))
     
     return text
+
+# --- Получение обучающего примера ---
+def get_learning_example(user_id):
+    lang = USER_LANGUAGES.get(str(user_id), 'ru')
+    examples = LEARNING_EXAMPLES[lang]["examples"]
+    if not examples:
+        # Если нет примеров на выбранном языке, используем русский
+        examples = LEARNING_EXAMPLES['ru']["examples"]
+    return random.choice(examples)
 
 # --- Уровни и достижения ---
 def get_level(points: int, user_id):
@@ -158,9 +177,50 @@ async def help_command(message: types.Message):
 @dp.message(Command("learn"))
 async def learn_command(message: types.Message):
     user_id = str(message.from_user.id)
-    tip = random.choice(QUESTIONS)
-    feedbacks = "\n\n".join([f"💡 {opt['feedback']}" for opt in tip["options"]])
-    await message.answer(f"{get_text(user_id, 'learn_example')}:\n\n⚠️ {tip['situation']}\n\n{feedbacks}")
+    example = get_learning_example(user_id)
+    
+    # Форматируем советы в виде списка
+    tips_text = "\n".join([f"• {tip}" for tip in example["tips"]])
+    
+    response_text = (
+        f"{get_text(user_id, 'learn_example')}\n\n"
+        f"⚠️ {example['situation']}\n\n"
+        f"🔍 {example['explanation']}\n\n"
+        f"💡 **Советы для безопасности:**\n"
+        f"{tips_text}"
+    )
+    
+    await message.answer(response_text)
+
+@dp.message(Command("leaderboard"))
+async def leaderboard_command(message: types.Message):
+    user_id = str(message.from_user.id)
+    if not SCORES:
+        await message.answer(get_text(user_id, "leaderboard_empty"))
+        return
+    
+    top = sorted(SCORES.items(), key=lambda x: x[1], reverse=True)[:5]
+    text = get_text(user_id, "leaderboard_title")
+    for i, (uid, score) in enumerate(top, 1):
+        name = f"@{uid}" if not uid.isdigit() else f"ID {uid[-5:]}"
+        text += f"{i}. {name} — {score} {get_text(user_id, 'points')} ({get_level(score, user_id)})\n"
+    await message.answer(text)
+
+@dp.message(Command("stats"))
+async def stats_command(message: types.Message):
+    user_id = str(message.from_user.id)
+    user_key = message.from_user.username or str(message.from_user.id)
+    points = SCORES.get(user_key, 0)
+    await message.answer(get_text(user_id, "stats_text", points=points, level=get_level(points, user_id)))
+
+@dp.message(Command("web"))
+async def web_command(message: types.Message):
+    user_id = str(message.from_user.id)
+    await message.answer(get_text(user_id, "web_panel", url=WEB_URL))
+
+@dp.message(Command("quiz"))
+async def quiz_command(message: types.Message):
+    await start_quiz(message)
 
 @dp.message(F.text)
 async def handle_text(message: types.Message):
@@ -169,9 +229,20 @@ async def handle_text(message: types.Message):
     
     # Обработка кнопок главного меню
     if user_text == get_text(user_id, "menu_learn"):
-        tip = random.choice(QUESTIONS)
-        feedbacks = "\n\n".join([f"💡 {opt['feedback']}" for opt in tip["options"]])
-        await message.answer(f"{get_text(user_id, 'learn_example')}:\n\n⚠️ {tip['situation']}\n\n{feedbacks}")
+        example = get_learning_example(user_id)
+        
+        # Форматируем советы в виде списка
+        tips_text = "\n".join([f"• {tip}" for tip in example["tips"]])
+        
+        response_text = (
+            f"{get_text(user_id, 'learn_example')}\n\n"
+            f"⚠️ {example['situation']}\n\n"
+            f"🔍 {example['explanation']}\n\n"
+            f"💡 **Советы для безопасности:**\n"
+            f"{tips_text}"
+        )
+        
+        await message.answer(response_text)
     
     elif user_text == get_text(user_id, "menu_leaderboard"):
         if not SCORES:
@@ -232,13 +303,18 @@ async def send_question(message: types.Message):
 
     question = random.choice(QUESTIONS)
     state["question"] = question["id"]
+    
+    # Получаем язык пользователя
+    lang = USER_LANGUAGES.get(str(user_id), 'ru')
+    
+    # Создаем клавиатуру с вариантами на нужном языке
     markup = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=opt["text"])] for opt in question["options"]],
+        keyboard=[[KeyboardButton(text=opt["text"][lang])] for opt in question["options"]],
         resize_keyboard=True
     )
     
     await message.answer(
-        get_text(user_id, "quiz_question", current=current_q + 1, situation=question['situation']),
+        get_text(user_id, "quiz_question", current=current_q + 1, situation=question['situation'][lang]),
         reply_markup=markup
     )
 
@@ -261,13 +337,16 @@ async def check_answer(message: types.Message):
     if not question:
         return
 
+    # Получаем язык пользователя
+    lang = USER_LANGUAGES.get(str(user_id), 'ru')
+
     for opt in question["options"]:
-        if message.text == opt["text"]:
+        if message.text == opt["text"][lang]:
             if opt["isCorrect"]:
                 state["score"] += 1
-                await message.answer(get_text(user_id, "quiz_correct", feedback=opt['feedback']))
+                await message.answer(get_text(user_id, "quiz_correct", feedback=opt['feedback'][lang]))
             else:
-                await message.answer(get_text(user_id, "quiz_incorrect", feedback=opt['feedback']))
+                await message.answer(get_text(user_id, "quiz_incorrect", feedback=opt['feedback'][lang]))
             break
 
     state["current"] += 1
